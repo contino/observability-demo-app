@@ -28,8 +28,12 @@ ab -n 5000000 -c 5 http://localhost:5000/
 
 Once the Prometheus data is flowing, you can hook Grafana up and use [this dashboard](https://grafana.com/grafana/dashboards/9688) to view the data.
 
+![The Grafana Dashboard](dashboard.png)
+
 ## AWS X-Ray
 
 Whilst the traces aren't anything particularly special, they will prove whether your X-Ray setup is working.
 
 Make sure that [AWS OpenTelemetry Collector](https://aws-otel.github.io/docs/getting-started/collector) is running somewhere, then update the `OBSDEMO_OTEL_ENDPOINT` to point to that location.  As long as your IAM policies are correct, your traces should start to show up in X-Ray
+
+![The AWS X-Ray Dashboard](xray.png)
