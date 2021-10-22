@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+import os
 import boto3
 import random
 import time
@@ -104,5 +106,5 @@ def main():
             )
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0")
 
