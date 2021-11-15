@@ -41,7 +41,7 @@ jobs:
         run: echo "::set-output name=BANDIT::$(bandit demo.py >secure_report.txt | awk 1 ORS='\\n' || true)"
 
       - name: Attach this as a comment
-      - uses: mshick/add-pr-comment@v1
+        uses: mshick/add-pr-comment@v1
         with:
           message: |
             ## Linting report
@@ -55,3 +55,4 @@ jobs:
             ```
               ${{ steps.security_lint.outputs.BANDIT }}
             ```
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
