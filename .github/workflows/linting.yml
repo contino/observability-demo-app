@@ -34,11 +34,17 @@ jobs:
         id: lint
         # Awk expression - replace newlines with chars in ORS.
         # Or true so we get the report, but not gating.
-        run: echo "::set-output name=LINTING::$(pylint demo.py | awk 1 ORS='\\n'|| true)"
+        run: |
+          linting_output="$(pylint demo.py 2>&1 || true)"
+          echo ${linting_output}
+          echo "::set-output name=LINTING::$(echo ${linting_output} | awk 1 ORS='\\n')"
 
       - name: Security linting report
         id: security_lint
-        run: echo "::set-output name=BANDIT::$(bandit demo.py >secure_report.txt | awk 1 ORS='\\n' || true)"
+        run: |
+          linting_output="$(bandit demo.py 2>&1 || true)"
+          echo ${linting_output}
+          echo "::set-output name=BANDIT::$(echo ${linting_output} | awk 1 ORS='\\n')"
 
       - name: Attach this as a comment
         uses: mshick/add-pr-comment@v1
