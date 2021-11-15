@@ -53,7 +53,7 @@ jobs:
             ## Linting report
 
             ```
-              ${{ steps.lint.outputs.PYLINT }}
+              ${{ steps.lint.outputs.LINTING }}
             ```
 
             ## Security Report
