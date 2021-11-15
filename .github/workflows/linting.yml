@@ -27,8 +27,11 @@ jobs:
       - name: ... and linting dependencies
         run: pip install pylint bandit
 
-      - name: Code Linting
-        run: pylint demo.py
+      - name: Code Errors Lint
+        run: pylint --errors-only demo.py
 
-      - name: Security linting
-        run: bandit demo.py
+      - name: Code Linting report
+        run: pylint demo.py || true
+
+      - name: Security linting report
+        run: bandit demo.py || true
