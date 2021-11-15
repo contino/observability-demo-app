@@ -1,8 +1,5 @@
-# This is a basic workflow to help you get started with Actions
+name: Lint and Build
 
-name: Build and upload containers
-
-# Controls when the action will run. 
 on:
   push:
     branches:
@@ -10,15 +7,64 @@ on:
   pull_request:
     branches:
       - main
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  lint:
     runs-on: ubuntu-latest
+    steps:
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+      - name: Check Out Repo 
+        uses: actions/checkout@v2
+
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Set up app dependencies
+        run: pip install -r requirements.txt
+      
+      - name: ... and linting dependencies
+        run: pip install pylint bandit
+
+      - name: Code Errors Lint
+        run: pylint --errors-only demo.py
+
+      - name: Code Linting report
+        id: lint
+        # Awk expression - replace newlines with chars in ORS.
+        # Or true so we get the report, but not gating.
+        run: |
+          linting_output="$(pylint demo.py 2>&1 | awk 1 ORS='\\n')"
+          echo -e "${linting_output}"
+          echo "::set-output name=LINTING::${linting_output//$'\\n'/'%0A'}"
+
+      - name: Security linting report
+        id: security_lint
+        run: |
+          linting_output="$(bandit demo.py 2>&1 | awk 1 ORS='\\n')"
+          echo -e "${linting_output}"
+          echo "::set-output name=BANDIT::${linting_output//$'\\n'/'%0A'}"
+
+      - name: Attach this as a comment
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            ## Linting report
+
+            ```
+            ${{ steps.lint.outputs.LINTING }}
+            ```
+
+            ## Security Report
+
+            ```
+            ${{ steps.security_lint.outputs.BANDIT }}
+            ```
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
     steps:
 
       - name: Check Out Repo 
