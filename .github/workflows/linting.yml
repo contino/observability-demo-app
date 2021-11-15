@@ -53,12 +53,12 @@ jobs:
             ## Linting report
 
             ```
-              ${{ steps.lint.outputs.LINTING }}
+            ${{ steps.lint.outputs.LINTING }}
             ```
 
             ## Security Report
 
             ```
-              ${{ steps.security_lint.outputs.BANDIT }}
+            ${{ steps.security_lint.outputs.BANDIT }}
             ```
           repo-token: ${{ secrets.GITHUB_TOKEN }}
