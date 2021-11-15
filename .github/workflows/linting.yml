@@ -37,14 +37,14 @@ jobs:
         run: |
           linting_output="$(pylint demo.py 2>&1 | awk 1 ORS='\\n')"
           echo -e "${linting_output}"
-          echo "::set-output name=LINTING::${linting_output}"
+          echo "::set-output name=LINTING::${linting_output//$'\\n'/'%0A'}"
 
       - name: Security linting report
         id: security_lint
         run: |
           linting_output="$(bandit demo.py 2>&1 | awk 1 ORS='\\n')"
           echo -e "${linting_output}"
-          echo "::set-output name=BANDIT::${linting_output}"
+          echo "::set-output name=BANDIT::${linting_output//$'\\n'/'%0A'}"
 
       - name: Attach this as a comment
         uses: mshick/add-pr-comment@v1
