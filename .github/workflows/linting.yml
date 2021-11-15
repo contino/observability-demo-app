@@ -1,0 +1,34 @@
+name: Python linting
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - main
+  
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check Out Repo 
+        uses: actions/checkout@v2
+
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Set up app dependencies
+        run: pip install -r requirements.txt
+      
+      - name: ... and linting dependencies
+        run: pip install pylint bandit
+
+      - name: Code Linting
+        run: pylint demo.py
+
+      - name: Security linting
+        run: bandit demo.py
