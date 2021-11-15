@@ -31,7 +31,27 @@ jobs:
         run: pylint --errors-only demo.py
 
       - name: Code Linting report
-        run: pylint demo.py || true
+        id: lint
+        # Awk expression - replace newlines with chars in ORS.
+        # Or true so we get the report, but not gating.
+        run: echo "::set-output name=LINTING::$(pylint demo.py | awk 1 ORS='\\n'|| true)"
 
       - name: Security linting report
-        run: bandit demo.py || true
+        id: security_lint
+        run: echo "::set-output name=BANDIT::$(bandit demo.py >secure_report.txt | awk 1 ORS='\\n' || true)"
+
+      - name: Attach this as a comment
+      - uses: mshick/add-pr-comment@v1
+        with:
+          message: |
+            ## Linting report
+
+            ```
+              ${{ steps.lint.outputs.PYLINT }}
+            ```
+
+            ## Security Report
+
+            ```
+              ${{ steps.security_lint.outputs.BANDIT }}
+            ```
