@@ -15,7 +15,7 @@ Prometheus should scrape the `/metrics` endpoint of this application
 5. Set the `OBSDEMO_APP_SECRET` environment variable to the value you want to use for your app secret key
 6. Assuming you're running in AWS, set `OTEL_PROPAGATORS=xray` to send traces to XRay
 7. Alternatively, copy `.env.sample` to `.env`, update the values, and source it to setup the environment
-8. Run the app `python demo.py`
+8. Run the app `python app.py`
 
 The app is now available at [http://localhost:5000/](http://localhost:5000/), with metrics at [http://localhost:5000/metrics](http://localhost:5000/metrics).  
 
