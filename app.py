@@ -109,7 +109,7 @@ SQLite3Instrumentor().instrument()
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect("file::memory:?cache=shared")
+        db = g._database = sqlite3.connect("file::memory:?cache=shared") # pylint: disable=E0237
         cur = db.cursor()
         cur.execute("CREATE TABLE obsdemo (timestamp integer, randomint integer)")
     return db
