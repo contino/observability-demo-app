@@ -1,23 +1,36 @@
 # observability-demo-app
 
-A basic Python Flask application that randomly returns an HTTP error for 25% of queries.
+A Python application to show the benefits of the [OpenTelemetry](https://www.opentelemetry.io) project.
 
-By default, this works in AWS only and is configured to use X-Ray and Prometheus.
+## Deployment
 
-Prometheus should scrape the `/metrics` endpoint of this application
+### Docker
 
-## Getting up and running
+You can setup this container by editing `docker.env` to the appropriate values and running the following command:
+
+```bash
+docker run --env-file docker.env -P 5000:5000  ghcr.io/contino/observability-demo-app:latest
+```
+
+Logs will be sent to STDOUT by default, so you'll want to capture these somehow and send them on to your logging engine such as [Loki](https://grafana.com/oss/loki/), [Vector](https://vector.dev/), [Elasticsearch](https://www.elastic.co), or [FluentD](https://www.fluentd.org).
+
+Traces will be sent to the OTLP endpoint specified in the environment file, and you can see the trace ID in the logs.
+
+### Running locally/without Docker
+
+If you don't want to use Docker, then you can follow these steps to get up and running
 
 1. Create a virtualenv
 2. Activate the virtualenv
 3. Install the requirements: `pip install -r requirements.txt`
 4. Set the `OBSDEMO_OTLP_ENDPOINT` environment variable to point to your OTLP collector
 5. Set the `OBSDEMO_APP_SECRET` environment variable to the value you want to use for your app secret key
-6. Assuming you're running in AWS, set `OTEL_PROPAGATORS=xray` to send traces to XRay
 7. Alternatively, copy `.env.sample` to `.env`, update the values, and source it to setup the environment
 8. Run the app `python app.py`
 
-The app is now available at [http://localhost:5000/](http://localhost:5000/), with metrics at [http://localhost:5000/metrics](http://localhost:5000/metrics).  
+## Accessing the App
+
+Once you have run the deployment steps, the app will be available available at [http://localhost:5000/](http://localhost:5000/), with metrics at [http://localhost:5000/metrics](http://localhost:5000/metrics).  
 
 Point Prometheus at the `/metrics` endpoint, and then launch something like [apache bench](https://httpd.apache.org/docs/2.4/programs/ab.html) against the root:
 
@@ -31,10 +44,34 @@ Once the Prometheus data is flowing, you can hook Grafana up and use [this dashb
 
 ![The Grafana Dashboard](dashboard.png)
 
-## AWS X-Ray
+## Tracing Data
 
-Whilst the traces aren't anything particularly special, they will prove whether your X-Ray setup is working.
+Whilst the traces aren't anything particularly special, they will demonstrate the power of OpenTelemetry's tracing engine.
+
+
+### In AWS XRAY
 
 Make sure that [AWS OpenTelemetry Collector](https://aws-otel.github.io/docs/getting-started/collector) is running somewhere, then update the `OBSDEMO_OTEL_ENDPOINT` to point to that location.  As long as your IAM policies are correct, your traces should start to show up in X-Ray
 
 ![The AWS X-Ray Dashboard](xray.png)
+
+### Grafana Tempo
+
+Ensure that the [OTLP Collector Distributor Configuration](https://grafana.com/docs/tempo/latest/configuration/#distributor) includes at least the following lines:
+
+```yaml
+# Distributor config block
+distributor:
+
+    # receiver configuration for different protocols
+    # config is passed down to opentelemetry receivers
+    # for a production deployment you should only enable the receivers you need!
+    receivers:
+        otlp:
+            protocols:
+                http:
+```
+
+Update the `OBSDEMO_OTEL_ENDPOINT` environment variable to point to your Tempo URL.  Make sure you add `v1/traces` to the end of the URL otherwise it won't work!
+
+Once you start the App, you should be able to take a trace ID from the logs and use this in Grafana to view the trace.
