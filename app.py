@@ -10,7 +10,7 @@ import random
 
 import requests
 
-from flask import Flask, abort, session, g
+from flask import Flask, abort, session, g, request
 from prometheus_flask_exporter import PrometheusMetrics
 # Add imports for OTel components into the application
 
@@ -45,38 +45,6 @@ span_processor = BatchSpanProcessor(
 trace.get_tracer_provider().add_span_processor(span_processor)
 
 
-### CONFIGURE LOGGING ###
-#LOGGING = {
-#    'version': 1,
-#    'disable_existing_loggers': True,
-#    'formatters': {
-#        'json': {'()': 'pythonjsonlogger.jsonlogger.JsonFormatter'},
-#        'standard': {
-#            'format': '%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [traceID=%(otelTraceID)s spanID=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s', # pylint: disable=line-too-long
-#            'datefmt': '%d-%m-%Y %H:%M:%S'
-#        },
-#    },
-#    'handlers': {
-#        'console': {
-#            'level': 'DEBUG',
-#            'class': 'logging.StreamHandler',
-#            'formatter': 'json',
-#        },
-#        'syslog': {
-#            'class': 'logging.handlers.SysLogHandler',
-#            'address': ('localhost', 1514),
-#            'facility': 'local0',
-#            'formatter': 'standard'
-#            },
-#    },
-#    'loggers': {
-#        'root': {
-#            'handlers': ['console'],
-#            'level': 'DEBUG',
-#            'propagate': True,
-#        },
-#    }
-#}
 
 LOG_FORMAT = '%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [traceID=%(otelTraceID)s spanID=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s' # pylint: disable=line-too-long
 LoggingInstrumentor().instrument(
@@ -84,16 +52,11 @@ LoggingInstrumentor().instrument(
         log_level=logging.DEBUG,
         log_format=LOG_FORMAT
         )
-#dictConfig(LOGGING)
-
-
-
 
 app = Flask(__name__)
 app.secret_key=os.getenv("OBSDEMO_APP_SECRET")
 logger = logging.getLogger(__name__)
 logger.info(f"OTLP Configured and pointing to {os.getenv('OBSDEMO_OTLP_ENDPOINT')}")
-
 
 @app.before_request
 def before_request_func():
