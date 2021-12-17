@@ -1,68 +1,97 @@
-global:
-  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
-  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
-  # scrape_timeout is set to the global default (10s).
+version: '3.7'
 
-# Alertmanager configuration
-alerting:
-  alertmanagers:
-  - static_configs:
-    - targets:
-      # - alertmanager:9093
+volumes:
+    prometheus_data: {}
+      #    grafana_data: {}
 
-remote_write:
-  - url: 'MY AWS PROMETHEUS REMOTE WRITE ENDPOINT'
-    sigv4:
-      region: 'MY REGION'
-    queue_config:
-      max_samples_per_send: 1000
-      max_shards: 200
-      capacity: 2500
+networks:
+  front-tier:
+  back-tier:
 
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
-scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+services:
 
-  - job_name: 'prometheus'
+  obsdemo:
+    image: ghcr.io/contino/observability-demo-app:pr-12
+    ports:
+      - 5000:5000
+    links:
+      - prometheus:prometheus
+    depends_on:
+      - prometheus
+    networks:
+      - back-tier
+    restart: always
 
-    # Override the global default and scrape targets from this job every 5 seconds.
-    scrape_interval: 5s
+  prometheus:
+    image: prom/prometheus:v2.26.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    links:
+      - cadvisor:cadvisor
+    depends_on:
+      - cadvisor
+    networks:
+      - back-tier
+    restart: always
 
-    static_configs:
-         - targets: ['localhost:9090']
+  otelexporter:
+    image: public.ecr.aws/aws-observability/aws-otel-collector:latest
+    volumes:
+      - ./otel/:/etc/otel/
+    command:
+      - '--config=/etc/otel/otel-local-config.yaml'
+    ports:
+      - 4317:4317
+      - 55680:55680
+      - 55681:55681
+      - 8888:8888
+    links:
+      - prometheus:prometheus
+    depends_on:
+      - prometheus
+    networks:
+      - back-tier
+    restart: always
 
+  node-exporter:
+    image: prom/node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command: 
+      - '--path.procfs=/host/proc' 
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    ports:
+      - 9100:9100
+    networks:
+      - back-tier
+    restart: always
+    deploy:
+      mode: global
 
-  - job_name: 'cadvisor'
-
-    # Override the global default and scrape targets from this job every 5 seconds.
-    scrape_interval: 5s
-
-    dns_sd_configs:
-    - names:
-      - 'tasks.cadvisor'
-      type: 'A'
-      port: 8080
-
-  - job_name: 'obsdemo'
-
-    # Override the global default and scrape targets from this job every 5 seconds.
-    scrape_interval: 5s
-
-    dns_sd_configs:
-    - names:
-      - 'tasks.obsdemo'
-      type: 'A'
-      port: 5000
-
-  - job_name: 'node-exporter'
-
-    # Override the global default and scrape targets from this job every 5 seconds.
-    scrape_interval: 5s
-
-    dns_sd_configs:
-    - names:
-      - 'tasks.node-exporter'
-      type: 'A'
-      port: 9100
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8080:8080
+    networks:
+      - back-tier
+    restart: always
+    deploy:
+      mode: global
 
