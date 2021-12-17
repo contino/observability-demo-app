@@ -40,13 +40,36 @@ ab -n 5000000 -c 5 http://localhost:5000/
 
 ## Dashboards
 
-Once the Prometheus data is flowing, you can hook Grafana up and use [this dashboard](https://grafana.com/grafana/dashboards/9688) to view the data.
+Once the Prometheus data is flowing, you can hook Grafana up and use [this dashboard](https://grafana.com/grafana/dashboards/9688) to view the data about the flask application.
 
 ![The Grafana Dashboard](dashboard.png)
 
 ## Tracing Data
 
 Whilst the traces aren't anything particularly special, they will demonstrate the power of OpenTelemetry's tracing engine.
+
+### In Grafana
+
+Assuming that you have your log entries Loki and traces in Tempo, you should be able to [set up a derived field](https://grafana.com/docs/grafana/latest/datasources/loki/#derived-fields) as follows:
+
+![Derived Field Configuration](derivedField.png)
+
+**Note**: Because we are using an "internal" data source, we can leave the `query` field set to `${__value.raw}`, there is no need for an additional URL.
+
+Once this is set up, go to the `Explore` section and look at the logs for your app.  You should see that the records which contain a trace_id field now have a link to tempo:
+
+![Loki Logs showing the trace ID and a link to Tempo](GrafanaLokiLogs.png)
+
+If you click on the "Tempo" button, a new split window will open on the right of your screen showing you the traces
+
+![Split screen in Grafana showing Loki logs and Tempo Trace Data](GrafanaLokiTempo.png)
+
+Finally, if you close the log data split and then click on the `Node Graph (beta)` button, you should see a map of the application calling out to external URLs and running various queries against an in-memory SQLite Database:
+
+![The Tempo Node Graph Panel](GrafanaTempoMap.png)
+
+Unfortunately it is not possible at present to include this map into a dashboard due to [Grafana/43201](https://github.com/grafana/grafana/issues/43201), so if you want to view a map then you need to view the data in `Explore` mode.  We're hoping this can be fixed in due course!
+
 
 
 ### In AWS XRAY
