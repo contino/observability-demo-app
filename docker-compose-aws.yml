@@ -1,0 +1,97 @@
+version: '3.7'
+
+volumes:
+    prometheus_data: {}
+      #    grafana_data: {}
+
+networks:
+  front-tier:
+  back-tier:
+
+services:
+
+  obsdemo:
+    image: ghcr.io/contino/observability-demo-app:pr-12
+    ports:
+      - 5000:5000
+    links:
+      - prometheus:prometheus
+    depends_on:
+      - prometheus
+    networks:
+      - back-tier
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:v2.26.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    links:
+      - cadvisor:cadvisor
+    depends_on:
+      - cadvisor
+    networks:
+      - back-tier
+    restart: always
+
+  otelexporter:
+    image: public.ecr.aws/aws-observability/aws-otel-collector:latest
+    volumes:
+      - ./otel/:/etc/otel/
+    command:
+      - '--config=/etc/otel/otel-local-config.yaml'
+    ports:
+      - 4317:4317
+      - 55680:55680
+      - 55681:55681
+      - 8888:8888
+    links:
+      - prometheus:prometheus
+    depends_on:
+      - prometheus
+    networks:
+      - back-tier
+    restart: always
+
+  node-exporter:
+    image: prom/node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command: 
+      - '--path.procfs=/host/proc' 
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    ports:
+      - 9100:9100
+    networks:
+      - back-tier
+    restart: always
+    deploy:
+      mode: global
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8080:8080
+    networks:
+      - back-tier
+    restart: always
+    deploy:
+      mode: global
+

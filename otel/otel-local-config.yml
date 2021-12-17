@@ -1,0 +1,35 @@
+extensions:
+  health_check:
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:55681
+
+processors:
+  batch:
+
+exporters:
+  logging:
+    loglevel: debug
+  awsxray:
+    region: 'eu-west-2'
+  awsemf:
+    region: 'eu-west-2'
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [awsxray]
+    metrics:
+      receivers: [otlp]
+      exporters: [awsemf]
+
+  extensions: [pprof]
+  telemetry:
+    logs:
+      level: debug
