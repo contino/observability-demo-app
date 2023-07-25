@@ -2,7 +2,7 @@ asgiref==3.4.1
 backoff==1.10.0
 boto3==1.18.9
 botocore==1.21.9
-certifi==2021.5.30
+certifi==2023.7.22
 charset-normalizer==2.0.3
 click==8.0.1
 Deprecated==1.2.12
